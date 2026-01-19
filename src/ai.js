@@ -2,7 +2,8 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 /* ===AI RECIPE ==== */
 export async function generateRecipeAI({ food, goal, condition }) {
-  const res = await fetch("http://localhost:5000/api/recipe", {
+  const res = await fetch(`${API_URL}/api/recipe`, {
+
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,7 +24,8 @@ export async function generateRecipeAI({ food, goal, condition }) {
   return res.json();
 }
 export async function generateWeeklyMealPlan(data) {
-  const res = await fetch("http://localhost:5000/api/meal-plan", {
+  const res = await fetch(`${API_URL}/api/meal-plan`, {
+
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

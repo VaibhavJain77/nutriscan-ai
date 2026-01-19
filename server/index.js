@@ -256,16 +256,17 @@ JSON format:
 }
 `;
 
-
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
-      messages,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
       temperature: 0.2,
       max_tokens: 1200,
     });
-
-
-
 
     const raw = completion.choices[0].message.content;
 
@@ -277,10 +278,11 @@ JSON format:
 
     res.json(JSON.parse(jsonMatch[0]));
   } catch (err) {
-    console.error(err);
+    console.error("❌ Recipe AI error:", err);
     res.status(500).json({ error: "Recipe AI failed" });
   }
 });
+
 
 // -------------------- START SERVER --------------------
 app.listen(PORT, () => {

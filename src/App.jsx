@@ -702,10 +702,6 @@ const Dashboard = ({
             <h2 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
               NutriScan AI
             </h2>
-
-            <span className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 font-medium rounded-md border border-emerald-100">
-              Pro Plan
-            </span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -793,9 +789,7 @@ const Dashboard = ({
                     )}
                   </h2>
 
-                  <p className="text-emerald-600 text-sm font-medium mb-4">
-                    Pro Member
-                  </p>
+                  <p className="text-emerald-600 text-sm font-medium mb-4"></p>
                   <div className="w-full grid grid-cols-2 gap-2 mb-6">
                     <StatBox label="Age" value={profile?.age || "-"} />
                     <StatBox
@@ -988,7 +982,6 @@ const Dashboard = ({
                     {[
                       { key: "veg", label: "🥦 Veg" },
                       { key: "non-veg", label: "🍗 Non-Veg" },
-                      { key: "other", label: "🌎 Other" },
                     ].map((item) => (
                       <button
                         key={item.key}

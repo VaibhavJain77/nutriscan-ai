@@ -201,8 +201,6 @@ app.post("/api/dinner", async (req, res) => {
           Constraints:
           - Diet Type: ${safeDiet}
           - Condition: ${safeCondition} (avoid bad ingredients)
-          - If diet type is vegan make dinner idea according to vegan
-          - Vegans don't eat any food from animals, including meat, poultry, fish, dairy (milk, cheese, butter), eggs, and honey, plus other animal-derived ingredients like gelatin, rennet, and some sugars or wines
           
           Return ONLY JSON (no markdown):
           {

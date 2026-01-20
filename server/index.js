@@ -202,11 +202,43 @@ Respond ONLY in valid JSON. No explanation text.
 `;
 
 
-    const reply = await chatWithAI(prompt);
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      temperature: 0,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a medical Indian nutritionist. You MUST follow health rules strictly.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      max_tokens: 300,
+    });
+
+    const reply = completion.choices[0].message.content;
+
 
     console.log("AI RAW DINNER REPLY:", reply);
 
     const meal = JSON.parse(reply);
+    if (safeCondition === "diabetes") {
+      const banned = ["rice", "sugar", "jaggery", "maida", "white bread"];
+      const text = `${meal.name} ${meal.desc}`.toLowerCase();
+
+      if (banned.some((b) => text.includes(b))) {
+        return res.json({
+          name: "Vegetable Dal with Millets",
+          cals: Math.min(remainingCalories, 350),
+          desc:
+            "Low-GI dinner with millets, dal, and vegetables. Safe for diabetes.",
+        });
+      }
+    }
+
 
     res.json(meal);
   } catch (err) {

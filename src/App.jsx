@@ -373,13 +373,13 @@ function getPredictionText(profile) {
 
   if (profile.goal === "loss") {
     return `On track to reach ${(weight - 2).toFixed(
-      1
+      1,
     )} kg in the next few weeks.`;
   }
 
   if (profile.goal === "gain") {
     return `On track to reach ${(weight + 2).toFixed(
-      1
+      1,
     )} kg in the next few weeks.`;
   }
 
@@ -593,7 +593,7 @@ const Dashboard = ({
     const resolved = resolveFood(
       scanFood.name,
       scanFood.unit || "bowl",
-      servings
+      servings,
     );
 
     if (!resolved) {
@@ -946,7 +946,7 @@ const Dashboard = ({
                       max={`${nutrition.calories}g`}
                       percent={Math.min(
                         100,
-                        Math.round((totalCalories / nutrition.calories) * 100)
+                        Math.round((totalCalories / nutrition.calories) * 100),
                       )}
                       color="bg-amber-500"
                     />
@@ -957,7 +957,7 @@ const Dashboard = ({
                       max={`${nutrition.protein}g`}
                       percent={Math.min(
                         100,
-                        Math.round((totalProtein / nutrition.protein) * 100)
+                        Math.round((totalProtein / nutrition.protein) * 100),
                       )}
                       color="bg-sky-500"
                     />
@@ -968,7 +968,7 @@ const Dashboard = ({
                       max={`${nutrition.fats}g`}
                       percent={Math.min(
                         100,
-                        Math.round((totalFats / nutrition.fats) * 100)
+                        Math.round((totalFats / nutrition.fats) * 100),
                       )}
                       color="bg-yellow-500"
                     />
@@ -1444,8 +1444,8 @@ hover:bg-slate-50 dark:hover:bg-slate-800"
                   .then((r) => r.blob())
                   .then((blob) =>
                     setImageFile(
-                      new File([blob], "camera.png", { type: "image/png" })
-                    )
+                      new File([blob], "camera.png", { type: "image/png" }),
+                    ),
                   );
 
                 stopCamera();

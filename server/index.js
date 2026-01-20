@@ -170,87 +170,74 @@ app.post("/api/report/pdf", async (req, res) => {
   }
 });
 
+
 app.post("/api/dinner", async (req, res) => {
   try {
-    const { remainingCalories, dietType, condition, goal } = req.body;
+    const { remainingCalories, condition, dietType } = req.body;
 
-    const prompt = `
-You are a certified Indian nutritionist.
+    if (!groq) {
+      console.error("CRITICAL: Groq client is not initialized.");
+      // Fallback immediately if AI isn't ready
+      return res.json(getFallbackDinner(condition || "none", 400));
+    }
 
-Generate ONE Indian dinner idea ONLY.
-
-STRICT RULES:
-- Cuisine: Indian food only (no pasta, pizza, salad, sandwich, soup)
-- Diet type: ${dietType === "veg" ? "Pure vegetarian (no egg)" : "Non-vegetarian allowed"}
-- Health condition: ${condition || "none"}
-- Fitness goal: ${goal}
-- Calories must be under ${remainingCalories}
-
-SPECIAL HEALTH RULES:
-${condition === "diabetes" ? "- Avoid sugar, white rice, refined flour. Prefer low-GI foods like millets, dal, vegetables.\n" : ""}
-${condition === "hypertension" ? "- Low salt, avoid fried foods.\n" : ""}
-${condition === "cholesterol" ? "- Low oil, avoid butter and cream.\n" : ""}
-
-OUTPUT FORMAT (IMPORTANT):
-Respond ONLY in valid JSON. No explanation text.
-
-{
-  "name": "Indian dish name",
-  "cals": number,
-  "desc": "Short 1-line description"
-}
-`;
+    const safeCalories = Number(remainingCalories) > 0 ? Number(remainingCalories) : 400;
+    const safeCondition = (condition || "none").toLowerCase().replace(/\s+/g, "");
+    const safeDiet = dietType || "vegetarian";
 
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
-      temperature: 0,
+      temperature: 0.3,
       messages: [
         {
           role: "system",
-          content:
-            "You are a medical Indian nutritionist. You MUST follow health rules strictly.",
+          content: "You are a nutritionist. Return ONLY valid JSON."
         },
         {
           role: "user",
-          content: prompt,
+          content: `Suggest ONE healthy Indian dinner under ${safeCalories} calories.
+          
+          Constraints:
+          - Diet Type: ${safeDiet}
+          - Condition: ${safeCondition} (avoid bad ingredients)
+          
+          Return ONLY JSON (no markdown):
+          {
+            "name": "Dish Name",
+            "cals": number,
+            "desc": "Short description"
+          }`
         },
       ],
       max_tokens: 300,
     });
 
-    const reply = completion.choices[0].message.content;
+    const reply = completion.choices?.[0]?.message?.content || "";
+    const jsonMatch = reply.match(/\{[\s\S]*\}/);
 
-
-    console.log("AI RAW DINNER REPLY:", reply);
-
-    const meal = JSON.parse(reply);
-    if (safeCondition === "diabetes") {
-      const banned = ["rice", "sugar", "jaggery", "maida", "white bread"];
-      const text = `${meal.name} ${meal.desc}`.toLowerCase();
-
-      if (banned.some((b) => text.includes(b))) {
-        return res.json({
-          name: "Vegetable Dal with Millets",
-          cals: Math.min(remainingCalories, 350),
-          desc:
-            "Low-GI dinner with millets, dal, and vegetables. Safe for diabetes.",
-        });
-      }
+    if (!jsonMatch) {
+      console.warn("⚠️ AI did not return JSON. Using fallback.");
+      return res.json(getFallbackDinner(safeCondition, safeCalories));
     }
 
+    const meal = JSON.parse(jsonMatch[0]);
+
+    if (!meal.name || !meal.cals) {
+      return res.json(getFallbackDinner(safeCondition, safeCalories));
+    }
 
     res.json(meal);
-  } catch (err) {
-    console.error(" Dinner AI error:", err.message);
 
-    res.status(500).json({
-      error: "AI dinner generation failed",
-    });
+  } catch (err) {
+    console.error("❌ /api/dinner CRASHED:", err.message);
+    if (err.message.includes("API key")) {
+      console.error("💡 HINT: Check your .env file for GROQ_API_KEY");
+    }
+    const fallbackCals = req.body.remainingCalories || 400;
+    res.json(getFallbackDinner("none", fallbackCals));
   }
 });
-
-
 function isGenericQuery(query) {
   return query.trim().split(/\s+/).length <= 2;
 }

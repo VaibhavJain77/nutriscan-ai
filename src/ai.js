@@ -77,6 +77,7 @@ export async function getCoachResponse(messages, input, profile) {
 }
 
 /*=== DINNER PLANNER === */
+/* === DINNER PLANNER === */
 export async function generateDinnerIdeaAI({
   remainingCalories,
   dietType,
@@ -95,7 +96,8 @@ export async function generateDinnerIdeaAI({
   });
 
   if (!res.ok) {
-    throw new Error("AI dinner failed");
+    // This catches the 500 if the backend still crashes
+    throw new Error(`Server Error: ${res.status}`);
   }
 
   return await res.json();

@@ -410,7 +410,47 @@ function calculateNutrition(profile) {
     fats,
   };
 }
-
+const ModelLoadingNotice = ({ onClose }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+  >
+    <motion.div
+      initial={{ scale: 0.9, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      className="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden"
+    >
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
+      <div className="flex flex-col items-center text-center gap-4 mt-2">
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-2 shadow-inner">
+          <Zap className="w-8 h-8 text-emerald-600 animate-pulse" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+          Initializing AI Models
+        </h3>
+        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+          Welcome to your dashboard! 🚀 <br />
+          <br />
+          Please note that our{" "}
+          <span className="font-bold text-slate-700 dark:text-slate-200">
+            AI Vision features
+          </span>{" "}
+          need about{" "}
+          <span className="font-bold text-emerald-600">1–2 minutes</span> to
+          warm up. This only happens once per session.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-3.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold hover:opacity-90 transition-opacity mt-4 shadow-lg"
+        >
+          Got it, I'll wait
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+);
 const Dashboard = ({
   profile,
   setView,
@@ -423,6 +463,15 @@ const Dashboard = ({
   onLogout,
 }) => {
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showModelWait, setShowModelWait] = useState(false);
+
+  useEffect(() => {
+    const hasShown = sessionStorage.getItem("hasShownModelNotice");
+    if (!hasShown) {
+      setShowModelWait(true);
+      sessionStorage.setItem("hasShownModelNotice", "true");
+    }
+  }, []);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -1117,6 +1166,11 @@ const Dashboard = ({
         setIsOpen={setChatOpen}
         profile={profile}
       />
+      <AnimatePresence>
+        {showModelWait && (
+          <ModelLoadingNotice onClose={() => setShowModelWait(false)} />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {scanOpen && (
           <motion.div

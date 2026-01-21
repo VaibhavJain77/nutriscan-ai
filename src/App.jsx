@@ -410,7 +410,47 @@ function calculateNutrition(profile) {
     fats,
   };
 }
-
+const ModelLoadingNotice = ({ onClose }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm"
+  >
+    <motion.div
+      initial={{ scale: 0.9, y: 20 }}
+      animate={{ scale: 1, y: 0 }}
+      className="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 relative overflow-hidden"
+    >
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
+      <div className="flex flex-col items-center text-center gap-4 mt-2">
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-2 shadow-inner">
+          <Zap className="w-8 h-8 text-emerald-600 animate-pulse" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+          Initializing AI Models
+        </h3>
+        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+          Welcome to your dashboard! 🚀 <br />
+          <br />
+          Please note that our{" "}
+          <span className="font-bold text-slate-700 dark:text-slate-200">
+            AI Vision features
+          </span>{" "}
+          need about{" "}
+          <span className="font-bold text-emerald-600">1–2 minutes</span> to
+          warm up. This only happens once per session.
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-3.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-bold hover:opacity-90 transition-opacity mt-4 shadow-lg"
+        >
+          Got it, I'll wait
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+);
 const Dashboard = ({
   profile,
   setView,
@@ -423,6 +463,15 @@ const Dashboard = ({
   onLogout,
 }) => {
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showModelWait, setShowModelWait] = useState(false);
+
+  useEffect(() => {
+    const hasShown = sessionStorage.getItem("hasShownModelNotice");
+    if (!hasShown) {
+      setShowModelWait(true);
+      sessionStorage.setItem("hasShownModelNotice", "true");
+    }
+  }, []);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -431,6 +480,10 @@ const Dashboard = ({
   const bmi = calculateBMI(profile?.weight, profile?.height);
   const bmiLabel = getBMILabel(bmi);
   const [generating, setGenerating] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
+  const todaysLogs = foodLogs.filter((log) => log.date === today);
+  const historyLogs = foodLogs.filter((log) => log.date !== today);
   const [exporting, setExporting] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [generatedMeal, setGeneratedMeal] = useState(null);
@@ -448,9 +501,12 @@ const Dashboard = ({
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [detecting, setDetecting] = useState(false);
-  const totalCalories = foodLogs.reduce((sum, food) => sum + food.calories, 0);
-  const totalProtein = foodLogs.reduce((sum, food) => sum + food.protein, 0);
-  const totalFats = foodLogs.reduce((sum, food) => sum + food.fats, 0);
+  const totalCalories = todaysLogs.reduce(
+    (sum, food) => sum + food.calories,
+    0,
+  );
+  const totalProtein = todaysLogs.reduce((sum, food) => sum + food.protein, 0);
+  const totalFats = todaysLogs.reduce((sum, food) => sum + food.fats, 0);
   const notifications = [];
 
   if (totalCalories < nutrition.calories - 200) {
@@ -611,6 +667,7 @@ const Dashboard = ({
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: today,
         type: "Scan",
       },
     ]);
@@ -691,7 +748,6 @@ const Dashboard = ({
           <NavIcon icon={<LogOut />} onClick={onLogout} />
         </div>
       </aside>
-
       {/* CONTENT AREA */}
       <div className="pl-20 flex-1 flex flex-col min-h-screen w-full overflow-x-hidden">
         {/* HEADER - UPDATED TO FIXED */}
@@ -892,21 +948,32 @@ const Dashboard = ({
               </div>
 
               {/* ROW 2: RECENT SCANS & INTAKE */}
+              {/* ROW 2: RECENT SCANS & INTAKE */}
               <div className="col-span-12 md:col-span-8">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-h-[320px] shadow-sm flex flex-col">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                      <Scan className="w-5 h-5 text-blue-500" /> Recent Scans
+                      <Scan className="w-5 h-5 text-blue-500" /> Today's Scans
                     </h3>
-                    <button className="text-xs text-emerald-600 font-bold hover:underline">
-                      View All
-                    </button>
+                    <div className="flex gap-3">
+                      {/* NEW HISTORY BUTTON */}
+                      <button
+                        onClick={() => setHistoryOpen(true)}
+                        className="text-xs text-slate-500 hover:text-emerald-600 font-bold flex items-center gap-1"
+                      >
+                        <Calendar className="w-3 h-3" /> History
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-500/60 dark:scrollbar-thumb-slate-500/40 scrollbar-track-slate-100 dark:scrollbar-track-slate-900">
-                    {foodLogs.length === 0 && (
-                      <p className="text-sm text-slate-400">No scans yet</p>
+
+                  <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-thin...">
+                    {todaysLogs.length === 0 && (
+                      <p className="text-sm text-slate-400">
+                        No food logged today.
+                      </p>
                     )}
-                    {foodLogs.map((food) => (
+                    {/* CHANGE foodLogs.map TO todaysLogs.map */}
+                    {todaysLogs.map((food) => (
                       <LogItem
                         key={food.id}
                         title={food.name}
@@ -1110,13 +1177,24 @@ const Dashboard = ({
           </div>
         </footer>
       </div>
-
       {/* REAL AI CHAT BUBBLE */}
       <AICoachBubble
         isOpen={chatOpen}
         setIsOpen={setChatOpen}
         profile={profile}
       />
+      <HistoryModal
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        logs={foodLogs}
+        onRemove={handleRemoveFood}
+      />
+
+      <AnimatePresence>
+        {showModelWait && (
+          <ModelLoadingNotice onClose={() => setShowModelWait(false)} />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {scanOpen && (
           <motion.div
@@ -1244,15 +1322,19 @@ hover:bg-slate-50 dark:hover:bg-slate-800"
                           </span>
                           <input
                             type="number"
-                            min={0.5}
+                            min="0"
                             step={0.5}
                             value={servings}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => {
-                              const value = Number(e.target.value);
-                              if (value >= 0.5) setServings(value);
+                              const val = e.target.value;
+                              setServings(val === "" ? "" : Number(val));
                             }}
                             onBlur={() => {
-                              setServings(Math.round(servings * 2) / 2);
+                              let val = Number(servings);
+                              if (!val || val < 0.5) val = 1;
+                              invalid;
+                              setServings(Math.round(val * 2) / 2);
                             }}
                             className="w-24 border rounded-lg px-2 py-1 text-center"
                           />
@@ -1711,6 +1793,161 @@ const LogItem = ({ title, time, cals, type, image, onClick, onRemove }) => (
   </div>
 );
 
+const HistoryModal = ({ isOpen, onClose, logs, onRemove }) => {
+  if (!isOpen) return null;
+
+  const getLocalDateStr = (dateObj) => {
+    const offset = dateObj.getTimezoneOffset() * 60000;
+    return new Date(dateObj.getTime() - offset).toISOString().split("T")[0];
+  };
+
+  const getDateLabel = (dateStr) => {
+    const dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) return "Unknown Date";
+
+    const logDateLocal = getLocalDateStr(dateObj);
+    const todayLocal = getLocalDateStr(new Date());
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayLocal = getLocalDateStr(yesterday);
+
+    if (logDateLocal === todayLocal) return "Today";
+    if (logDateLocal === yesterdayLocal) return "Yesterday";
+
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const groupedLogs = logs.reduce((acc, log) => {
+    let dateKey = log.date;
+
+    if (!dateKey && log.id) {
+      const recoveredDate = new Date(Number(log.id));
+      if (!isNaN(recoveredDate.getTime())) {
+        dateKey = getLocalDateStr(recoveredDate);
+      }
+    }
+
+    if (!dateKey) dateKey = "Unknown Date";
+
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(log);
+    return acc;
+  }, {});
+
+  const sortedDates = Object.keys(groupedLogs).sort((a, b) => {
+    if (a === "Unknown Date") return 1;
+    if (b === "Unknown Date") return -1;
+    return new Date(b) - new Date(a);
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900 z-10">
+          <h3 className="font-bold text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-emerald-600" />
+            Meal History
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+          >
+            <X className="w-6 h-6 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-4 space-y-8 bg-slate-50 dark:bg-slate-950/50">
+          {sortedDates.length === 0 ? (
+            <div className="text-center py-12 opacity-50">
+              <p className="text-4xl mb-2">📅</p>
+              <p>No history found.</p>
+            </div>
+          ) : (
+            sortedDates.map((date) => {
+              const dayLogs = groupedLogs[date].sort((a, b) => b.id - a.id);
+              const totalCals = dayLogs.reduce((acc, i) => acc + i.calories, 0);
+
+              return (
+                <div
+                  key={date}
+                  className="animate-in fade-in slide-in-from-bottom-2 duration-500"
+                >
+                  <div className="flex justify-between items-end mb-3 px-1">
+                    <h4 className="font-extrabold text-lg text-slate-700 dark:text-slate-200 uppercase tracking-tight">
+                      {getDateLabel(date)}
+                    </h4>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-md">
+                      Total: {totalCals} kcal
+                    </span>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                    {dayLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {log.image ? (
+                              <img
+                                src={log.image}
+                                alt={log.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-lg">
+                                {log.type === "Scan" ? "📸" : "🍲"}
+                              </span>
+                            )}
+                          </div>
+
+                          <div>
+                            <p className="font-semibold text-slate-900 dark:text-slate-100">
+                              {log.name}
+                            </p>
+                            <p className="text-xs text-slate-500 font-medium">
+                              {log.time} • {log.type}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-slate-700 dark:text-slate-300">
+                            {log.calories} kcal
+                          </span>
+
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Remove this item?")) {
+                                onRemove(log.id);
+                              }
+                            }}
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                            title="Remove"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState("landing");
@@ -1745,7 +1982,11 @@ export default function App() {
       setView("dashboard");
     }
   }, []);
+  // inside App() component
+
   const handleAddRecipeToLog = (recipe) => {
+    const today = new Date().toISOString().split("T")[0];
+
     setFoodLogs((prev) => [
       ...prev,
       {
@@ -1759,6 +2000,7 @@ export default function App() {
           hour: "2-digit",
           minute: "2-digit",
         }),
+        date: today,
         type: "AI Recipe",
       },
     ]);

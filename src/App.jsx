@@ -1196,6 +1196,11 @@ const Dashboard = ({
         )}
       </AnimatePresence>
       <AnimatePresence>
+        {showModelWait && (
+          <ModelLoadingNotice onClose={() => setShowModelWait(false)} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
         {scanOpen && (
           <motion.div
             initial={{ opacity: 0 }}

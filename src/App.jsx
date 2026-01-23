@@ -435,11 +435,12 @@ const ModelLoadingNotice = ({ onClose }) => (
           <br />
           Please note that our{" "}
           <span className="font-bold text-slate-700 dark:text-slate-200">
-            AI Vision features
+            AI features
           </span>{" "}
           need about{" "}
           <span className="font-bold text-emerald-600">1–2 minutes</span> to
-          warm up. This only happens once per session.
+          warm up. This only happens once per session. This modal is made fully
+          on free trails. We appreciate your patience.
         </p>
         <button
           onClick={onClose}
